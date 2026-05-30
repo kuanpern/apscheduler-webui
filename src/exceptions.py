@@ -1,6 +1,6 @@
 class InvalidTrigger(Exception):
     def __init__(self, trigger: str) -> None:
-        msg = f"Invalid trigger: {trigger}(type: {type(trigger)}"
+        msg = f"Invalid trigger: {trigger}(type: {type(trigger)})"
         super().__init__(msg)
 
 

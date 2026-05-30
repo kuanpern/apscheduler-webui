@@ -7,18 +7,22 @@ name = 'apscheduler-webui'
 version = '0.1.1'
 requires-python = '>=3.10'
 dependencies = [
-    'apscheduler',
-    'fastapi',
-    'fastui>=0.9',
-    'loguru',
-    "pydantic>=2.12",
-    'python-multipart',
-    'uvicorn',
+    'apscheduler==3.11.2',
+    'fastapi==0.136.3',
+    'jinja2==3.1.6',
+    'loguru==0.7.3',
+    'pydantic==2.13.4',
+    'python-multipart==0.0.29',
+    'uvicorn==0.48.0',
 ]
 
 [[project.authors]]
 name = 'Dragon-GCS'
 email = '878173121@qq.com'
+
+[[project.authors]]
+name = 'Tan Kuan Pern'
+email = 'kptan86@gmail.com'
 
 [[tool.uv.index]]
 url = "https://mirrors.aliyun.com/pypi/simple"

@@ -1,16 +1,15 @@
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-from fastui import prebuilt_html
 
-from src.routes.api import router as api_router
-from src.routes.executor import router as executor_router
-from src.routes.job import router as job_router
-from src.routes.job_log import router as log_router
-from src.routes.job_store import router as store_router
 from src.scheduler import scheduler
-
+from src.api.job import router as api_job_router
+from src.ui.job import router as ui_job_router
+from src.api.executor import router as api_executor_router
+from src.ui.executor import router as ui_executor_router
+from src.api.job_store import router as api_store_router
+from src.ui.job_store import router as ui_store_router
+from src.api.job_log import router as api_log_router
+from src.ui.job_log import router as ui_log_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -19,22 +18,20 @@ async def lifespan(app: FastAPI):
     yield
     scheduler.shutdown()
 
-
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(executor_router)
-app.include_router(store_router)
-app.include_router(log_router)
-app.include_router(job_router)  # this router has a wildcard path: /job/{action}/{id}
-app.include_router(api_router)
+# Mount the JSON API for the SDK
+app.include_router(api_job_router)
 
-
-@app.get("/{path:path}")
-def index(path: str) -> HTMLResponse:
-    return HTMLResponse(prebuilt_html(api_root_url="/job"))
-
+# Mount the UI Views for HTMX
+app.include_router(ui_job_router)
+app.include_router(api_executor_router)
+app.include_router(ui_executor_router)
+app.include_router(api_store_router)
+app.include_router(ui_store_router)
+app.include_router(api_log_router)
+app.include_router(ui_log_router)
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,5 +1,6 @@
 import datetime
 import json
+import uuid
 from typing import TYPE_CHECKING, Annotated, Literal, TypeAlias
 
 from apscheduler.executors.asyncio import AsyncIOExecutor
@@ -73,11 +74,15 @@ class TriggerParam(BaseModel):
                 "end_date": trigger.end_date,
             }
         elif isinstance(trigger, IntervalTrigger):
+            weeks, days = divmod(trigger.interval.days, 7)
+            hours, remainder = divmod(trigger.interval.seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
             trigger_param = {
-                k: str(getattr(trigger.interval, f"{k}s"))
-                for k in cls.model_fields
-                if hasattr(trigger.interval, f"{k}s")
-            } | {
+                "week": str(weeks),
+                "day": str(days),
+                "hour": str(hours),
+                "minute": str(minutes),
+                "second": str(seconds),
                 "start_date": trigger.start_date,
                 "end_date": trigger.end_date,
             }
@@ -133,19 +138,13 @@ class JobInfo(BaseModel):
     and scheduler-specific configuration for UI presentation.
     """
 
-    id: Annotated[str, Field(title="ID")]
+    id: Annotated[str, Field(default_factory=lambda: uuid.uuid4().hex, title="ID")]
     name: Annotated[str, Field(title="Name")]
     next_run_time: Annotated[
         datetime.datetime | None, Field(title="Next Run"), PlainSerializer(format_date)
     ]
-    executor: Annotated[
-        str,
-        Field("default", title="Executor", json_schema_extra={"search_url": "/api/executors"}),
-    ]
-    jobstore: Annotated[
-        str,
-        Field("default", title="Job Store", json_schema_extra={"search_url": "/api/job-stores"}),
-    ]
+    executor: Annotated[str, Field("default", title="Executor")]
+    jobstore: Annotated[str, Field("default", title="Job Store")]
     trigger: Annotated[TriggerType, Field(title="Trigger")]
     trigger_params: Annotated[TriggerParam, Field(title="Trigger Params")]
     func: Annotated[
@@ -171,15 +170,15 @@ class JobInfo(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def parse(cls, job: Job) -> dict:
-        data = {name: getattr(job, name) for name in job.__slots__}
-        executor = job.executor
-        executor_class = scheduler._executors[executor].__class__
-        data["executor"] = f"{executor_class.__name__}({executor})"
+    def parse(cls, job: Job | dict) -> dict:
+        # Handle dictionary input (e.g., from API or Form data)
+        if isinstance(job, dict):
+            return job
 
-        job_store = job._jobstore_alias
-        job_store_class = scheduler._jobstores[job_store].__class__
-        data["jobstore"] = f"{job_store_class.__name__}({job_store})"
+        data = {name: getattr(job, name) for name in job.__slots__}
+        data["executor"] = job.executor
+
+        data["jobstore"] = job._jobstore_alias
 
         # Special handling for uv_run function
         if job.func is uv_run:
@@ -217,10 +216,28 @@ class ModifyJobParam(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def parse(cls, params: dict) -> dict:
-        params["args"] = tuple(json.loads(params.get("args", "[]")))
-        params["kwargs"] = dict(json.loads(params.get("kwargs", "{}")))
-        params["coalesce"] = params["coalesce"] == "on"
-        params.setdefault("trigger_params", TriggerParam())  # type: ignore
+        if params.get("next_run_time") == "":
+            params["next_run_time"] = None
+
+        # 1. Extract flat trigger fields from UI form submissions
+        trigger_dict = params.get("trigger_params", {})
+        if isinstance(trigger_dict, dict):
+            for key in TriggerParam.model_fields:
+                if key in params:
+                    trigger_dict[key] = params.pop(key)
+            params["trigger_params"] = trigger_dict
+
+        args = params.get("args") or "[]"
+        params["args"] = tuple(json.loads(args) if isinstance(args, str) else args)
+        
+        kwargs = params.get("kwargs") or "{}"
+        params["kwargs"] = dict(json.loads(kwargs) if isinstance(kwargs, str) else kwargs)
+        
+        # Handle both HTML form "on" and JSON bool `True`
+        coalesce = params.get("coalesce", True)
+        params["coalesce"] = coalesce == "on" if isinstance(coalesce, str) else bool(coalesce)
+        
+        params.setdefault("trigger_params", TriggerParam())
         return params
 
     def get_trigger(self) -> AllTrigger | None:
@@ -240,13 +257,7 @@ class NewJobParam(ModifyJobParam, JobInfo):  # type: ignore
 
 class JobStoreInfo(BaseModel):
     alias: Annotated[str, Field(title="Alias")]
-    type_: Annotated[
-        str,
-        Field(
-            title="Store Type",
-            json_schema_extra={"search_url": "/api/available-job-stores"},
-        ),
-    ]
+    type_: Annotated[str, Field(title="Store Type")]
     detail: Annotated[
         str,
         Field(
@@ -293,7 +304,7 @@ class JobStoreInfo(BaseModel):
             )
         elif type_ == "Redis":
             pool_kwargs = store.redis.connection_pool.connection_kwargs
-            job_store["detail"] = json.dumps({k: pool_kwargs[k] for k in ("host", "port", "db")})
+            job_store["detail"] = json.dumps({k: pool_kwargs.get(k) for k in ("host", "port", "db")})
         else:
             raise InvalidJobStore(store)
         return {"type_": type_, **job_store}

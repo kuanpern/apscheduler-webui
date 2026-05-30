@@ -1,142 +1,165 @@
-# APScheduler-WebUI
+# APScheduler WebUI
 
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Python Version](https://img.shields.io/badge/Python-3.10%2B-green.svg)](https://www.python.org/downloads/release/python-380/) [![FastUI Version](https://img.shields.io/badge/FastUI-orange.svg)](https://fastui.fastapi.tiangolo.com/) [![APScheduler](https://img.shields.io/badge/APScheduler-3.x-blue.svg)](https://github.com/agronholm/apscheduler)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Python Version](https://img.shields.io/badge/Python-3.10%2B-green.svg)](https://www.python.org/downloads/release/python-380/) [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688.svg)](https://fastapi.tiangolo.com/) [![HTMX](https://img.shields.io/badge/HTMX-1.9%2B-336699.svg)](https://htmx.org/) [![APScheduler](https://img.shields.io/badge/APScheduler-3.x-blue.svg)](https://github.com/agronholm/apscheduler)
 
-中文 | [English](README_en.md)
+[中文](README_zh.md) | English
 
-**APScheduler-WebUI** 是一个基于 [APScheduler](https://github.com/agronholm/apscheduler) 和 [FastUI](https://github.com/pydantic/FastUI) 构建的轻量级任务调度Web服务，旨在提供简洁直观的界面以管理和监控定时任务，同时利用 `APScheduler` 的强大功能实现灵活、高效的后台任务执行。
+**APScheduler WebUI** is a lightweight, modern task-scheduling web service built on [APScheduler](https://github.com/agronholm/apscheduler), [FastAPI](https://fastapi.tiangolo.com/), and [HTMX](https://htmx.org/). 
+
+It is designed to provide a clean and intuitive dashboard for managing and monitoring scheduled background tasks, while offering a dual-layer architecture: a dynamic web UI for humans, and a standard JSON API (`/api/...`) for SDKs and automation.
 
 ![screenshot](./pictures/screenshot.png)
 
-## 目录
+## Table of Contents
 
-- [APScheduler-WebUI](#apscheduler-webui)
-  - [目录](#目录)
-  - [主要特性](#主要特性)
-  - [快速开始](#快速开始)
-    - [本地部署](#本地部署)
-    - [Docker部署](#docker部署)
-    - [任务管理](#任务管理)
-    - [UV Script支持](#uv-script支持)
-    - [Executor、JobStore管理](#executorjobstore管理)
-    - [日志管理](#日志管理)
-  - [许可证](#许可证)
+- [APScheduler WebUI](#apscheduler-webui)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Quick Start](#quick-start)
+    - [Local Deployment](#local-deployment)
+    - [Docker](#docker)
+  - [Usage Guide](#usage-guide)
+    - [Managing Jobs](#managing-jobs)
+    - [UV Script Support](#uv-script-support)
+    - [Managing Executors and JobStores](#managing-executors-and-jobstores)
+    - [Log Management](#log-management)
+  - [License](#license)
 
-## 主要特性
+## Features
 
-- 创建、编辑、暂停、启动、删除、重载任务
-- 支持Cron、Interval、Date触发器
-- 创建、删除Executor和JobStore
-- 任务执行日志
-- 查看脚本文件内容
+- **Comprehensive Job Control:** Create, modify, pause, resume, remove, and reload jobs dynamically.
+- **Multiple Triggers:** Full support for `Cron`, `Interval`, and `Date` triggers.
+- **Dynamic Infrastructure:** Add and remove Executors and JobStores directly from the UI.
+- **Advanced Log Viewer:** Built-in log dashboard with filtering by log level, module, and pagination.
+- **`uv` Script Integration:** Run isolated `uv` scripts directly as scheduled background tasks.
+- **API First:** Fully separated `/api/` endpoints (JSON) and `/ui/` endpoints (HTMX HTML fragments).
 
-## 快速开始
+---
 
-克隆本仓库
+## Quick Start
 
-  ```bash
-  git clone https://github.com/Dragon-GCS/apscheduler-webui
-  ```
+Clone the repository:
 
-### 本地部署
+```bash
+git clone https://github.com/Dragon-GCS/apscheduler-webui
+cd apscheduler-webui
+```
 
-1. 安装依赖
+### Local Deployment
 
-    推荐使用[uv](https://hellowac.github.io/uv-zh-cn/getting-started/installation/)
+1. **Install dependencies**
 
-    > 如果你只需要使用sql/mongo/redis中的某一个作为持久化选项，可以只安装对应的依赖。默认安装全部依赖
+   We highly recommend using [uv](https://docs.astral.sh/uv/) for lightning-fast dependency management.
 
-    ```bash
-    uv sync --extra all # or all = mongo+redis+sql
-    ```
+   > **Note:** If you only need specific persistent job stores (e.g., only Redis), you can edit the dependencies. By default, installing `all` includes packages for MongoDB, Redis, and SQLAlchemy.
 
-    或者使用`pip`
+   ```bash
+   # Using uv
+   uv sync --extra all 
+   ```
 
-    ```bash
-    python -m venv .venv # 创建虚拟环境（可选）
-    pip install .[all]
-    ```
+   Or using standard `pip`:
 
-2. 启动服务
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install .[all]
+   ```
 
-    ```bash
-    # use uv
-    uv run uvicorn main:app
-    # use python
-    source .venv/bin/activate # 如果有虚拟环境
-    uvicron main:app
-    ```
+2. **Start the server**
 
-### Docker部署
+   ```bash
+   # Using uv
+   uv run uvicorn main:app --host 0.0.0.0 --port 8000
+   
+   # Using standard python (with venv activated)
+   uvicorn main:app --host 0.0.0.0 --port 8000
+   ```
 
-见[docker/DOCKER.md](docker/DOCKER.md)
+### Docker
 
-### 任务管理
+For containerized deployment, please see [docker/DOCKER.md](docker/DOCKER.md).
 
-- 在你的脚本中使用apscheduler注册任务
+---
+
+## Usage Guide
+
+### Managing Jobs
+
+**Adding Jobs via Code:**
+You can register jobs directly in your python scripts using the standard APScheduler syntax:
 
 ```python
 from src.scheduler import scheduler
 
-scheduler.add_job(func, ...)
-# or use decorator
-@scheduler.scheduled_job(...)
-def your_func(...):
-    ...
+# Method 1: standard function call
+scheduler.add_job(your_func, trigger='cron', hour=12)
+
+# Method 2: decorator
+@scheduler.scheduled_job('interval', minutes=5)
+def scheduled_task():
+    print("Running task...")
 ```
 
-- 使用WebUI（`/new`），通过字符串注册任务：`your_module:your_func`
-  > 为了管理脚本，建议将脚本放在指定目录下（比如`scripts`）下并通过`scripts.your_module:your_func`注册任务
+**Adding Jobs via WebUI (`/`):**
+To add a new job through the UI, use the string reference syntax: `module:function`. 
+> *Tip: Keep your job scripts organized in a specific folder (e.g., `scripts/`) and reference them in the UI as `scripts.your_module:your_func`.*
 
 ![job-detail](./pictures/job-detail.png)
 
-### UV Script支持
+### UV Script Support
 
-如果环境中`uv`命令可用，通过将`func`设置为`uv_run`可以运行[uv脚本](https://docs.astral.sh/uv/guides/scripts/)，脚本内容通过`uv_script`字段传递，`args`和`kwargs`字段将作为位置参数和关键字参数传递给脚本
+If the `uv` CLI tool is available on your host, you can seamlessly run [uv scripts](https://docs.astral.sh/uv/guides/scripts/)! 
+
+In the UI, set the Function field to the special value `uv_run`. 
+* Pass the target script path into the `uv_script` field.
+* Data provided in the `args` (list format) and `kwargs` (JSON object format) fields will be securely passed as positional and flag arguments.
 
 > [!NOTE]
-> `uv_run`函数通过`subprocess`调用`uv run`命令来执行脚本，并将参数传递给脚本  
-> `uv run {uv_script} {args0} {args1} ... {--key1=value1} {--key2=value2} ...`
+> Behind the scenes, the `uv_run` wrapper securely spawns a subprocess:
+> `uv run {uv_script} {arg0} {arg1} ... --{key1}={value1} --{key2}={value2}`
 
-### Executor、JobStore管理
+### Managing Executors and JobStores
 
-- 在`src/config.py`中配置
-- 通过WebUI(`/store`, `/executor`)管理（每次启动服务都会重置）
+- **Persistent Configuration:** Hardcode your base infrastructure inside `src/config.py`.
+- **Runtime Configuration:** You can dynamically attach/detach JobStores and Executors via the WebUI (`/store`, `/executor`). 
+  *(Note: Infrastructure added via the UI is transient and will reset to `config.py` defaults if the FastAPI service is restarted).*
 
-### 日志管理
+### Log Management
 
 ![log-view](./pictures/log-view.png)
 
-- WebUI(`/log/jobs`)可以解析并查看以特定格式记录的日志文件，日志分为两类：
-  - `scheduler`日志：记录调度器所输出的日志信息
-  - 任务日志：记录每个任务的输出日志信息
-- WebUI使用[Loguru](https://github.com/Delgan/loguru)来记录和管理日志，并且修改了默认的日志格式以便于解析，因此脚本可以通过`from loguru import logger`来直接使用日志
-  > WebUI通过设置环境变量`LOGURU_FORMAT`修改了`loguru`的默认格式，并在`src/log.py`中添加了sink将脚本日志输出到对应日期的文件中。  
-- 日志保存在`logs/`目录下(可以在`config.py`中配置)，其中`scheduler.*log`保存`scheduler`日志，`job.YYYY-MM-DD.log`保存脚本输出的日志。
+The WebUI includes a dedicated logs page (`/log/jobs`) that automatically parses local log files. Logs are categorized into two types:
+1. **Scheduler Logs:** Internal information, job triggers, and system events.
+2. **Job Logs:** The standard output and executed behavior of your actual scripts.
+
+The project utilizes [Loguru](https://github.com/Delgan/loguru) for logging, overriding standard logging behavior via the `LOGURU_FORMAT` environment variable to ensure logs are neatly formatted and parsed by the UI. Log files are securely rotated and stored in the `logs/` directory.
 
 > [!IMPORTANT]
-> 对于uv脚本，`subprocess`继承了环境变量，因此无需指定日志格式，但是如果希望在WebUI中查看日志，有以下两种方法：
+> **Logging inside `uv` Scripts:**
+> Because `uv` scripts run in isolated subprocesses, their internal logging won't automatically sync to the UI's daily log file unless explicitly configured. 
+> To ensure your script's logs show up in the WebUI, do one of the following inside your script:
 >
-> 1. 使用WebUI提供的server_log来记录日志
->
->    ```python
->    # 脚本的工作目录为项目的根目录，因此可以直接导入src模块
->    from src.log import server_log as logger
->    logger.info("This is a log message")
->    ```
->
-> 2. 在脚本中手动添加sink将日志记录到文件中
->
->    ```python
->    from loguru import logger
->    from src.config import LOG_PATH
+> **Method 1:** Import the configured WebUI logger directly (works if script is in project scope):
+> ```python
+> from src.log import server_log as logger
+> logger.info("This will appear in the WebUI!")
+> ```
 > 
->    server_log.add(
->      LOG_PATH / "jobs.{time:YYYY-MM-DD}.log", # 文件名可以自定义
->      rotation=datetime.time(0, 0),  # 如果文件名中包含{time}可以按天轮换
->    )
->    ```
+> **Method 2:** Manually point your script's Loguru instance to the shared log file:
+> ```python
+> from loguru import logger
+> from src.config import LOG_PATH
+> import datetime
+>
+> logger.add(
+>     LOG_PATH / "jobs.{time:YYYY-MM-DD}.log", 
+>     rotation=datetime.time(0, 0)
+> )
+> ```
 
-## 许可证
+---
 
-本项目采用 MIT 许可证。
+## License
+
+This project is open-sourced under the [MIT License](LICENSE).

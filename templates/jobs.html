@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Jobs</h1>
+    <!-- Button triggers the modal -->
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newJobModal">
+        New Job
+    </button>
+</div>
+
+<!-- Jobs Table -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Executor</th>
+                    <th>Trigger</th>
+                    <th>Next Run</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in jobs %}
+                <tr>
+                    <td>{{ job.id }}</td>
+                    <td>{{ job.name }}</td>
+                    <td><span class="badge bg-secondary">{{ job.executor }}</span></td>
+                    <td>{{ job.trigger }}</td>
+                    <td>{{ job.next_run_time if job.next_run_time else "Paused" }}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-warning" 
+                                    hx-post="/ui/job/{{ job.id }}/pause" hx-confirm="Pause job?">Pause</button>
+                            <button class="btn btn-outline-success" 
+                                    hx-post="/ui/job/{{ job.id }}/resume" hx-confirm="Resume job?">Resume</button>
+                            <button class="btn btn-outline-danger" 
+                                    hx-post="/ui/job/{{ job.id }}/remove" hx-confirm="Delete job?">Remove</button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center py-4 text-muted">No jobs scheduled.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- New Job Modal -->
+<div class="modal fade" id="newJobModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Job</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <!-- HTMX handles the form submission -->
+            <form hx-post="/ui/job/new" hx-target="#form-feedback" hx-swap="innerHTML">
+                <div class="modal-body">
+                    <div id="form-feedback"></div> <!-- Error messages will appear here -->
+                    
+                    <div class="row g-3">
+                        <!-- Core Settings -->
+                        <div class="col-md-6">
+                            <label class="form-label">Job ID (optional)</label>
+                            <input type="text" name="id" class="form-control" placeholder="Auto-generated if empty">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Name *</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Function *</label>
+                            <input type="text" name="func" class="form-control" placeholder="module.file:my_func" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Trigger *</label>
+                            <select name="trigger" class="form-select" required>
+                                <option value="Interval">Interval</option>
+                                <option value="Cron">Cron</option>
+                                <option value="Date">Date</option>
+                            </select>
+                        </div>
+
+                        <!-- Routing (populated from python context) -->
+                        <div class="col-md-6">
+                            <label class="form-label">Executor</label>
+                            <select name="executor" class="form-select">
+                                {% for exec in executors %}
+                                <option value="{{ exec }}">{{ exec }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Job Store</label>
+                            <select name="jobstore" class="form-select">
+                                {% for store in jobstores %}
+                                <option value="{{ store }}">{{ store }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Args & Kwargs -->
+                        <div class="col-md-6">
+                            <label class="form-label">Args (JSON list)</label>
+                            <input type="text" name="args" class="form-control" value="[]">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Kwargs (JSON dict)</label>
+                            <input type="text" name="kwargs" class="form-control" value="{}">
+                        </div>
+
+                        <!-- Time Params (Simplified for all triggers) -->
+                        <div class="col-12 mt-4"><hr><h6 class="mb-3">Time Parameters</h6></div>
+                        
+                        <div class="col-md-3">
+                            <label class="form-label">Weeks</label>
+                            <input type="number" name="week" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Days</label>
+                            <input type="number" name="day" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Hours</label>
+                            <input type="number" name="hour" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Minutes</label>
+                            <input type="number" name="minute" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Seconds</label>
+                            <input type="number" name="second" class="form-control">
+                        </div>
+                        
+                        <div class="col-12 mt-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="coalesce" id="coalesce" checked>
+                                <label class="form-check-label" for="coalesce">Coalesce (Combine missed runs)</label>
+                            </div>
+                        </div>
+                        <!-- Hidden required defaults -->
+                        <input type="hidden" name="max_instances" value="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Job</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

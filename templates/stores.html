@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Job Stores</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newStoreModal">New Job Store</button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Alias</th>
+                    <th>Type</th>
+                    <th>Details</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for store in stores %}
+                <tr>
+                    <td>{{ store.alias }}</td>
+                    <td><span class="badge bg-info text-dark">{{ store.type_ }}</span></td>
+                    <td><small class="text-muted">{{ store.detail }}</small></td>
+                    <td>
+                        {% if store.alias != "default" %}
+                        <button class="btn btn-sm btn-outline-danger" 
+                                hx-post="/ui/store/{{ store.alias }}/remove"
+                                hx-confirm="Delete store {{ store.alias }}?">Remove</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="newStoreModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Job Store</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form hx-post="/ui/store/new" hx-target="#store-form-feedback" hx-swap="innerHTML">
+                <div class="modal-body">
+                    <div id="store-form-feedback"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Alias *</label>
+                        <input type="text" name="alias" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Type *</label>
+                        <select name="type_" class="form-select" required>
+                            <option value="Memory">Memory</option>
+                            <option value="SQLAlchemy">SQLAlchemy</option>
+                            <option value="MongoDB">MongoDB</option>
+                            <option value="Redis">Redis</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Details (JSON String / URL)</label>
+                        <textarea name="detail" class="form-control" rows="3" placeholder='{"host": "localhost", "port": 6379, "db": 0}'></textarea>
+                        <div class="form-text">For Memory, leave empty. For SQL, provide URL string. For Mongo/Redis, provide JSON dict.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Job Store</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

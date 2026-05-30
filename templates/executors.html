@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Executors</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newExecutorModal">New Executor</button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Alias</th>
+                    <th>Type</th>
+                    <th>Max Workers</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exec in executors %}
+                <tr>
+                    <td>{{ exec.alias }}</td>
+                    <td>{{ exec.type_ }}</td>
+                    <td>{{ exec.max_worker if exec.max_worker else "N/A" }}</td>
+                    <td>
+                        {% if exec.alias != "default" %}
+                        <button class="btn btn-sm btn-outline-danger" 
+                                hx-post="/ui/executor/{{ exec.alias }}/remove"
+                                hx-confirm="Delete executor {{ exec.alias }}?">Remove</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="newExecutorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Executor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form hx-post="/ui/executor/new" hx-target="#exec-form-feedback" hx-swap="innerHTML">
+                <div class="modal-body">
+                    <div id="exec-form-feedback"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Alias *</label>
+                        <input type="text" name="alias" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Type *</label>
+                        <select name="type_" class="form-select" required>
+                            <option value="Asyncio">Asyncio</option>
+                            <option value="ThreadPool">ThreadPool</option>
+                            <option value="ProcessPool">ProcessPool</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Max Workers (Leave blank for Asyncio/Defaults)</label>
+                        <input type="number" name="max_worker" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Executor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
