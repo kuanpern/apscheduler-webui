@@ -4,6 +4,10 @@
 
 中文 | [English](README.md)
 
+> **注意：** 本项目是原始 [Dragon-GCS/apscheduler-webui](https://github.com/Dragon-GCS/apscheduler-webui) 项目的一个分支（fork）。
+> 创建此分支的原因是原项目所依赖的 [FastUI](https://github.com/pydantic/FastUI) 库已停止维护。
+> 此外，本分支通过将标准的 JSON API 路由（`/api/...`）与 UI 渲染页面完全分离，为 API 调用提供了更好的支持。
+
 **APScheduler WebUI** 是一个基于 [APScheduler](https://github.com/agronholm/apscheduler)、[FastAPI](https://fastapi.tiangolo.com/) 和 [HTMX](https://htmx.org/) 构建的轻量级、现代化的任务调度 Web 服务。
 
 它旨在提供一个简洁直观的仪表板，用于管理和监控后台定时任务。同时它采用了双层架构：为日常人员操作提供动态 Web UI，为 SDK 和自动化脚本提供标准的 JSON API (`/api/...`)。
@@ -41,7 +45,7 @@
 克隆仓库：
 
 ```bash
-git clone https://github.com/Dragon-GCS/apscheduler-webui
+git clone https://github.com/kuanpern/apscheduler-webui
 cd apscheduler-webui
 ```
 

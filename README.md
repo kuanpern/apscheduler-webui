@@ -4,6 +4,10 @@
 
 [中文](README_zh.md) | English
 
+> **Note:** This is a fork of the original [Dragon-GCS/apscheduler-webui](https://github.com/Dragon-GCS/apscheduler-webui) project.
+> It was created because [FastUI](https://github.com/pydantic/FastUI), which the original project depended on, has been deactivated.
+> Additionally, this fork provides better support for API usage by cleanly separating standard JSON API endpoints (`/api/...`) from UI rendering.
+
 **APScheduler WebUI** is a lightweight, modern task-scheduling web service built on [APScheduler](https://github.com/agronholm/apscheduler), [FastAPI](https://fastapi.tiangolo.com/), and [HTMX](https://htmx.org/). 
 
 It is designed to provide a clean and intuitive dashboard for managing and monitoring scheduled background tasks, while offering a dual-layer architecture: a dynamic web UI for humans, and a standard JSON API (`/api/...`) for SDKs and automation.
@@ -41,7 +45,7 @@ It is designed to provide a clean and intuitive dashboard for managing and monit
 Clone the repository:
 
 ```bash
-git clone https://github.com/Dragon-GCS/apscheduler-webui
+git clone https://github.com/kuanpern/apscheduler-webui
 cd apscheduler-webui
 ```
 
